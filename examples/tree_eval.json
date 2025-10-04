@@ -1,0 +1,41 @@
+{
+  "alphabet": 2,
+  "functions": {
+    "MAJ": {
+      "arity": 3,
+      "table": [
+        0, 0, 0, 1,
+        0, 1, 1, 1,
+        0, 1, 1, 1,
+        1, 1, 1, 1
+      ]
+    },
+    "XOR": {
+      "arity": 2,
+      "table": [0, 1, 1, 0]
+    }
+  },
+  "tree": {
+    "type": "node",
+    "function": "MAJ",
+    "children": [
+      {
+        "type": "node",
+        "function": "XOR",
+        "children": [
+          { "type": "leaf", "value": 1 },
+          { "type": "leaf", "value": 0 }
+        ]
+      },
+      {
+        "type": "node",
+        "function": "XOR",
+        "children": [
+          { "type": "leaf", "value": 1 },
+          { "type": "leaf", "value": 1 }
+        ]
+      },
+      { "type": "leaf", "value": 0 }
+    ]
+  }
+}

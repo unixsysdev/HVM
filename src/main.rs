@@ -3,7 +3,7 @@
 #![allow(unused_variables)]
 
 use clap::{Arg, ArgAction, Command};
-use ::hvm::{ast, cmp, hvm};
+use ::hvm::{ast, cmp, hvm, pebble};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -62,6 +62,18 @@ fn main() {
           .long("io")
           .action(ArgAction::SetTrue)
           .help("Generate with IO enabled")))
+    .subcommand(
+      Command::new("tree-pebble")
+        .about("Evaluates a tree specification using a bounded pebbling cache")
+        .arg(Arg::new("file").required(true))
+        .arg(
+          Arg::new("cache")
+            .long("cache")
+            .value_name("ENTRIES")
+            .help("Override the pebbling cache capacity")
+            .value_parser(clap::value_parser!(usize))
+        )
+    )
     .get_matches();
 
   match matches.subcommand() {
@@ -152,6 +164,25 @@ fn main() {
       let hvm_cu = format!("{hvm_cu}\n\n{}", include_str!("run.cu"));
       let hvm_cu = hvm_cu.replace(r#"#include "hvm.cu""#, "");
       println!("{}", hvm_cu);
+    }
+    Some(("tree-pebble", sub_matches)) => {
+      let file = sub_matches.get_one::<String>("file").expect("required");
+      let data = fs::read_to_string(file).expect("Unable to read file");
+      let cache = sub_matches.get_one::<usize>("cache").copied();
+      let spec = pebble::TreeSpec::from_json(&data)
+        .unwrap_or_else(|err| panic!("{}", err));
+      let mut evaluator = pebble::Evaluator::new(spec, cache);
+      match evaluator.evaluate() {
+        Ok(result) => {
+          println!("Result: {}", result);
+          let stats = evaluator.stats();
+          println!("- CACHE CAPACITY: {}", evaluator.cache_capacity());
+          println!("- PEAK CACHE ENTRIES: {}", stats.peak_cache_entries);
+          println!("- PEAK STACK DEPTH: {}", stats.peak_stack_depth);
+          println!("- CACHE EVICTIONS: {}", stats.evictions);
+        }
+        Err(err) => panic!("{}", err),
+      }
     }
     _ => unreachable!(),
   }

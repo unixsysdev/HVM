@@ -14,6 +14,9 @@ prototype of this concept. Compared to its predecessor, HVM2 is simpler, faster
 and, most importantly, more correct. [HOC](https://HigherOrderCO.com/) provides
 long-term support for all features listed on its [PAPER](./paper/HVM2.pdf).
 
+Additional design notes collected during this exploration are available in the
+repository under [docs/space_time_tradeoff.md](./docs/space_time_tradeoff.md).
+
 This repository provides a low-level IR language for specifying the HVM2 nets
 and a compiler from that language to C and CUDA. It is not meant for direct
 human usage. If you're looking for a high-level language to interface with HVM2,
@@ -43,12 +46,35 @@ hvm run-c  <file.hvm> # interpret via C
 hvm run-cu <file.hvm> # interpret via CUDA
 hvm gen-c  <file.hvm> # compile to standalone C
 hvm gen-cu <file.hvm> # compile to standalone CUDA
+hvm tree-pebble <file.json> [--cache N]
 ```
 
 All modes produce the same output. The compiled modes require you to compile the
 generated file (with `gcc file.c -o file`, for example), but are faster to run.
 The CUDA versions have much higher peak performance but are less stable. As a
 rule of thumb, `gen-c` should be used in production.
+
+### Experimental tree evaluation pebbling
+
+The `tree-pebble` subcommand loads a tree-evaluation instance encoded as JSON
+and simulates Ryan Williams' recomputation-based space savings using a bounded
+cache. The evaluator keeps only a limited number of subtree values in memory and
+recomputes evicted subtrees on demand, providing a practical hook for
+space–time tradeoff experiments without touching the core interaction-net
+runtime.
+
+```sh
+# Evaluate the example tree with the default square-root-sized cache
+hvm tree-pebble examples/tree_eval.json
+
+# Force a very small cache to observe additional recomputation
+hvm tree-pebble examples/tree_eval.json --cache 2
+```
+
+The command reports the result alongside cache statistics so that you can gauge
+how aggressively recomputation is being used. See
+[docs/space_time_tradeoff.md](./docs/space_time_tradeoff.md) for research notes
+on integrating the same idea with full interaction nets.
 
 Language
 --------
